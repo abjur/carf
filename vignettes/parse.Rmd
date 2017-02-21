@@ -1,0 +1,26 @@
+---
+title: "Parse"
+author: "F"
+date: "February 21, 2017"
+output: html_document
+---
+
+```{r}
+devtools::load_all('.')
+library(dplyr)
+
+arqs_pag <- dir('../data-raw/2017', full.names = TRUE, pattern = '^pag') %>% 
+  normalizePath()
+arqs_p <- dir('../data-raw/2017', full.names = TRUE, pattern = '_p_') %>% 
+  normalizePath()
+
+d_processos <- parse_jurisprudencia(arqs_p)
+d_pags <- parse_jurisprudencia_pags(arqs_pag)
+
+
+```
+
+```{r}
+d_final <- consolidar(d_pags = d_pags, d_proc = d_processos)
+```
+
