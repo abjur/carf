@@ -1,12 +1,32 @@
 Package: carf
-Title: What the Package Does (one line, title case)
-Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Title: A web scraper for the CARF system
+Version: 0.1.0.9000
+Authors@R: c(
+  person("Julio", "Trecenti", role = c("aut")),
+  person("Caio", "Lente", , "ctlente@gmail.com", role = c("aut", "cre")))
+Description: This package is a toolkit for scraping the multiple
+  websites that make up the CARF (Conselho Administrativo de Recursos
+  Fiscais) system.
 Depends: R (>= 3.3.2)
-License: What license is it under?
-Encoding: UTF-8
+License: GPL-3 + file LICENSE
 LazyData: true
-Suggests: knitr,
-    rmarkdown
+Imports:
+  dplyr,
+  tidyr,
+  abjutils,
+  glue,
+  httr,
+  lubridate,
+  purrr,
+  rvest,
+  stringr,
+  xml2,
+  magrittr,
+  progress,
+  jsonlite,
+  rlang,
+  pdftools
+Suggests:
+  knitr
 VignetteBuilder: knitr
+RoxygenNote: 6.0.1
