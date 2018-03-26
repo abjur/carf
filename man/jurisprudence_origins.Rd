@@ -3,7 +3,7 @@
 \docType{data}
 \name{jurisprudence_origins}
 \alias{jurisprudence_origins}
-\title{Information about possible origins for CARF decicions}
+\title{Information about possible origins for CARF decisions}
 \format{A tibble with columns:
 \describe{
  \item{id}{First five digits of a lawsuit ID}
@@ -13,6 +13,6 @@
 jurisprudence_origins
 }
 \description{
-Information about possible origins for CARF decicions
+Information about possible origins for CARF decisions
 }
 \keyword{datasets}

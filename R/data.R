@@ -1,4 +1,4 @@
-#' Information about possible origins for CARF decicions
+#' Information about possible origins for CARF decisions
 #'
 #' @format A tibble with columns:
 #' \describe{

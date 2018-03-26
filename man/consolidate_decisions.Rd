@@ -9,7 +9,7 @@ consolidate_decisions(pages, decisions)
 \arguments{
 \item{pages}{`pages` element returned by [parse_decision()]}
 
-\item{decisions}{`decicions` element returned by [parse_decision()]}
+\item{decisions}{`decisions` element returned by [parse_decision()]}
 }
 \value{
 A tibble

@@ -44,7 +44,7 @@ parse_decision <- function(file, type = "both", verbose = TRUE) {
 
   # Return only the necessary tables
   if (type == "both") {
-    return(list(pages = pages_df, decicions = decisions_df))
+    return(list(pages = pages_df, decisions = decisions_df))
   } else if (type == "page") {
     return(pages_df)
   } else {

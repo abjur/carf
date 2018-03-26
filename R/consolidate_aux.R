@@ -2,7 +2,7 @@
 #' Consolidate decisions
 #'
 #' @param pages `pages` element returned by [parse_decision()]
-#' @param decisions `decicions` element returned by [parse_decision()]
+#' @param decisions `decisions` element returned by [parse_decision()]
 #' @return A tibble
 consolidate_decisions <- function(pages, decisions) {
 
