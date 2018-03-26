@@ -27,6 +27,7 @@ Imports:
   rlang,
   pdftools
 Suggests:
-  knitr
+  knitr,
+  rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1

@@ -1,0 +1,64 @@
+---
+title: "Crawling Jurisprudence"
+author: "Caio Lente + Julio Trecenti"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Downloading CARF jurisprudence data
+
+```{r, eval = FALSE}
+dir <- "example-data/"
+files <- carf::download_decision_year(2017, dir, min_page = 1, max_page = 3)
+
+dir_2017 <- paste0(dir, "/2017")
+list.files(dir_2017)
+```
+
+```{r, echo = FALSE}
+list.files("example-data/2017/")
+```
+
+```{r, eval = FALSE}
+dir_page01 <- paste0(dir_2017, "/page_0001/")
+list.files(dir_2017)
+```
+
+```{r, echo = FALSE}
+list.files("example-data/2017/page_0001/")
+```
+
+## Parsing jurisprudence data
+
+```{r, eval = FALSE}
+parsed <- carf::parse_decision(files)
+```
+
+```{r, echo = FALSE}
+files <- list.files("example-data/2017/", pattern = "\\.html", recursive = TRUE, full.names = TRUE)
+parsed <- carf::parse_decision(files)
+```
+
+```{r}
+parsed$decicions
+
+parsed$pages
+```
+
+## Downloading comprot data given lawsuits
+
+```{r}
+ids <- unique(parsed$decicions$id_lawsuit)
+carf::get_comprot(ids)
+```
