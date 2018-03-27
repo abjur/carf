@@ -1,0 +1,381 @@
+---
+title: "Pesquisa conselheiros 2014"
+author: "Julio Trecenti + Caio Lente"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Essa pesquisa faz o levantamento de todos os conselheiros que aparecerem como
+relatores em processos do CARF baixados usando a ferramenta de pesquisa de
+jurisprudência.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(magrittr)
+library(ggplot2)
+```
+
+Relatores nos processos
+
+```{r, eval = FALSE}
+files <- carf::download_decision_year(2014, dir, min_page = 1, max_page = 50)
+parsed <- carf::parse_decision(files)
+decisions <- parsed$decicions
+```
+
+```{r, echo = FALSE}
+decisions <- readRDS("example-data/decisions_2014.rds")
+```
+
+```{r}
+relatores_raw <- decisions %>%
+  dplyr::mutate(
+    rapporteur = abjutils::rm_accent(rapporteur),
+    rapporteur = stringr::str_to_upper(rapporteur)) %>%
+  dplyr::count(rapporteur)
+
+relatores <- decisions %>%
+  dplyr::mutate(
+    rapporteur = rapporteur %>%
+      abjutils::rm_accent() %>% 
+      stringr::str_to_upper() %>% 
+      stringr::str_replace("rapporteurA? ", "") %>% 
+      stringr::str_replace("- ?(REDATORA? )?(DESIGNADO?A? )?AD?S? HOC", "") %>% 
+      stringr::str_replace(" REDATOR DESIGNADO|DESIGNADA?O?$", "") %>% 
+      stringr::str_replace(" ?-? ?rapporteurA?F?(KJH)?$", "") %>% 
+      stringr::str_replace(", rapporteur\\.$", "") %>% 
+      stringr::str_replace("^CONSELHEIRO?A? ", "") %>% 
+      stringr::str_trim() %>% 
+      stringr::str_replace("NAO SE APLICA|rapporteur|^$|^MAR$", "VAZIO/NAO SE APLICA")) %>%
+  dplyr::count(rapporteur, sort = TRUE)
+
+knitr::kable(head(relatores, 20))
+```
+
+Conselheiros do CARF
+
+```{r}
+conselheiros_carf <- carf::rapporteur_data %>%
+  dplyr::filter(rapporteur != "VAGO") %>%
+  dplyr::mutate(
+    rapporteur = ifelse(rapporteur == "MERCIA HELENA TRAJANO D AMORIM", "MERCIA HELENA TRAJANO DAMORIM", rapporteur),
+    rapporteur = ifelse(rapporteur == "KLEBER FERREIRA ARAUJO", "KLEBER FERREIRA DE ARAUJO", rapporteur),
+    rapporteur = ifelse(rapporteur == "ANDRE LUIS MARISCO LOMBARDI", "ANDRE LUIS MARSICO LOMBARDI", rapporteur))
+
+pander::pander(head(conselheiros_carf, 20))
+```
+
+Join das duas bases (faltantes)
+
+```{r}
+nomes_faltantes <- relatores %>%
+  dplyr::filter(!stringr::str_detect(rapporteur, "VAZIO")) %>%
+  dplyr::anti_join(conselheiros_carf, "rapporteur") %>%
+  dplyr::arrange(dplyr::desc(n))
+
+knitr::kable(head(nomes_faltantes, 20))
+```
+
+Incluindo nomes faltantes
+
+```{r}
+aux <- relatores %>%
+  dplyr::select(-n) %>%
+  dplyr::filter(!stringr::str_detect(rapporteur, "VAZIO")) %>%
+  dplyr::inner_join(carf::rapporteur_goliva, "rapporteur") %>%
+  dplyr::select(-n)
+
+relatores_final <- relatores %>%
+  dplyr::select(-n) %>%
+  dplyr::filter(!stringr::str_detect(rapporteur, "VAZIO")) %>%
+  dplyr::inner_join(conselheiros_carf, "rapporteur") %>%
+  dplyr::bind_rows(aux) %>%
+  dplyr::mutate(type = ifelse(type == "TRABALHADORES", "CONTRIBUINTES", type)) %>%
+  dplyr::filter(!section %in% c("CSRF", "CSFR")) %>%
+  dplyr::group_by(rapporteur) %>%
+  dplyr::mutate(n = length(title)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    chamber = ifelse(n>1, NA, chamber),
+    section = ifelse(n>1, NA, section)) %>%
+  dplyr::select(-n) %>%
+  dplyr::distinct(rapporteur, .keep_all = TRUE)
+
+d_relatores <- decisions %>%
+  dplyr::mutate(
+    rapporteur = rapporteur %>%
+      abjutils::rm_accent() %>% 
+      stringr::str_to_upper() %>% 
+      stringr::str_replace("rapporteurA? ", "") %>% 
+      stringr::str_replace("- ?(REDATORA? )?(DESIGNADO?A? )?AD?S? HOC", "") %>% 
+      stringr::str_replace(" REDATOR DESIGNADO|DESIGNADA?O?$", "") %>% 
+      stringr::str_replace(" ?-? ?rapporteurA?F?(KJH)?$", "") %>% 
+      stringr::str_replace(", rapporteur\\.$", "") %>% 
+      stringr::str_replace("^CONSELHEIRO?A? ", "") %>% 
+      stringr::str_trim() %>% 
+      stringr::str_replace("NAO SE APLICA|rapporteur|^$|^MAR$", "VAZIO/NAO SE APLICA")) %>%
+  dplyr::filter(rapporteur != "VAZIO/NAO SE APLICA") %>%
+  dplyr::inner_join(relatores_final, "rapporteur")
+
+knitr::kable(head(d_relatores, 20))
+```
+
+### Análise dos resultados
+
+Resultados dos processos
+
+```{r}
+negar_provimento <- "negar?(do)? (o )?provimento|negou se (o )?provimento|recurso nao provido"
+dar_provimento <- "dar?(do)? (o )?provimento|deu se (o )?provimento|recurso provido"
+em_parte <- "em parte|parcial"
+diligencia <- "diligencia"
+nao_conhecer <- "conhec"
+anular <- "nul(a|o|i)"
+
+d_decisoes <- d_relatores %>%
+  dplyr::distinct(id_lawsuit, .keep_all = TRUE) %>%
+  dplyr::filter(type_appeal %in% c("RECURSO VOLUNTARIO", "RECURSO DE OFÍCIO")) %>%
+  dplyr::mutate(
+    decision2 = decision %>%
+      stringr::str_to_lower() %>%
+      stringr::str_replace_all("[[:punct:]]|\n\r|\r\n", " ") %>%
+      stringr::str_replace_all("\n|\r", " ") %>%
+      stringr::str_replace_all(" +", " ") %>%
+      abjutils::rm_accent(),
+    negar_provimento = stringr::str_detect(decision2, negar_provimento),
+    dar_provimento = stringr::str_detect(decision2, dar_provimento),
+    em_parte = stringr::str_detect(decision2, em_parte),
+    diligencia = stringr::str_detect(decision2, diligencia),
+    nao_conhecer = stringr::str_detect(decision2, nao_conhecer),
+    anular = stringr::str_detect(decision2, anular)) %>%
+  dplyr::mutate(
+    sum = negar_provimento + (dar_provimento|em_parte) + diligencia + nao_conhecer + anular) %>%
+  dplyr::mutate(
+    result = ifelse(em_parte, "Parcialmente favorável ao contribuinte",
+            ifelse(dar_provimento & type_appeal=="RECURSO VOLUNTARIO", "Favorável ao contribuinte",
+            ifelse(dar_provimento & type_appeal=="RECURSO DE OFÍCIO", "Desfavorável ao contribuinte",
+            ifelse(negar_provimento & type_appeal=="RECURSO VOLUNTARIO", "Desfavorável ao contribuinte",
+            ifelse(negar_provimento & type_appeal=="RECURSO DE OFÍCIO", "Favorável ao contribuinte",
+            ifelse(diligencia|nao_conhecer|anular, "Não conhecido, anulado ou convertido em diligência",
+            "Outro / vazio"))))))) %>%
+  dplyr::mutate(
+    result = ifelse(dar_provimento & negar_provimento, "Parcialmente favorável ao contribuinte", result))
+```
+
+#### Proporçao de decisoes favoráveis por tipo de relator
+
+```{r}
+d_decisoes %>% 
+  dplyr::count(type_appeal) %>%
+  knitr::kable()
+```
+
+
+```{r}
+d_decisoes %>%
+  dplyr::count(type_appeal, result) %>%
+  dplyr::mutate(perc = scales::percent(n / sum(n))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(type_appeal = ifelse(is.na(type_appeal), "VAZIO", type_appeal)) %>%
+  dplyr::mutate(n_perc = sprintf("%04d (%5s)", n, perc)) %>%
+  dplyr::select(-n, -perc) %>%
+  tidyr::spread(type_appeal, n_perc) %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^0", " ") %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^( 0)", " ") %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^(  0)", " ") %>%
+  dplyr::mutate_all(dplyr::funs(ifelse(is.na(.), "   0 ( 0.0%)", .))) %>%
+  knitr::kable()
+```
+
+Mesma informacao no grafico
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+d_decisoes %>%
+  dplyr::count(type_appeal, result) %>%
+  dplyr::mutate(perc = scales::percent(n / sum(n))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(type_appeal = ifelse(is.na(type_appeal), "VAZIO", type_appeal)) %>%
+  dplyr::filter(type_appeal != "NÃO IDENTIFICADO") %>%
+  ggplot(aes(x = result, y = perc, fill = type_appeal)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14))
+```
+
+
+### Relatores com maior proporçao de processos favoráveis ao contribuinte
+
+```{r, eval = FALSE}
+d_decisoes %>%
+  dplyr::group_by(rapporteur) %>%
+  dplyr::mutate(n_rapporteur = length(taxpayer)) %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(n_rapporteur > 5) %>%
+  dplyr::select(-n_rapporteur) %>%
+  dplyr::count(rapporteur, type_appeal, result) %>%
+  dplyr::mutate(
+    perc_num = n / sum(n),
+    perc = scales::percent(perc_num)) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(dplyr::desc(perc)) %>%
+  dplyr::select(-perc_num) %>%
+  dplyr::mutate(n_perc = sprintf("%04d (%5s)", n, perc)) %>%
+  dplyr::select(-n, -perc) %>%
+  tidyr::spread(result, n_perc) %>%
+  purrr::set_names(
+    c("rapporteur", "type_appeal", "unfavorable", "favorable", "unknown", "other", "partially")) %>%
+  dplyr::mutate_all(dplyr::funs(ifelse(is.na(.), "0000 ( 0.0%)", .))) %>%
+  tidyr::separate(favorable, c("lixo", "num"), sep = " \\(", remove = FALSE) %>%
+  dplyr::select(-lixo) %>%
+  dplyr::mutate(num = as.numeric(stringr::str_replace_all("%|\\)", "", num))) %>%
+  dplyr::arrange(dplyr::desc(num)) %>%
+  dplyr::select(-num) %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^0", " ") %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^( 0)", "  ") %>%
+  dplyr::mutate_all(stringr::str_replace_all, "^(  0)", "   ") %>%
+  pander::pander()
+```
+
+### Resultados por seção, camara e turma
+
+#### Primeira seção
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+rs <- d_decisoes %>% dplyr::count(result) %>% dplyr::pull(result) %>% sort()
+rs_ord <- c(rs[1], rs[5], rs[2], rs[3], rs[4])
+```
+
+```{r fig.width=10, fig.height=8}
+aux <- d_decisoes %>%
+  dplyr::mutate(
+    section = section %>%
+      abjutils::rm_accent() %>% 
+      stringr::str_to_upper() %>% 
+      stringr::str_replace_all("\\?", "a"),
+    camara = chamber %>%
+      abjutils::rm_accent() %>%
+      stringr::str_to_upper() %>%
+      stringr::str_replace_all(" - ", "\n") %>%
+      stringr::str_extract("(PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA)(?= CAMARA)"),
+    turma = ifelse(stringr::str_detect(chamber, "ESPECIAL"), "ESPECIAL", camara)) %>%
+  dplyr::mutate(
+    turma = ifelse(stringr::str_detect(turma, "PRIMEIRA"), "1a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "SEGUNDA"), "2a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "TERCEIRA"), "3a TURMA", turma),
+    camara = ifelse(stringr::str_detect(camara, "PRIMEIRA"), "1a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "SEGUNDA"), "2a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "TERCEIRA"), "3a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "QUARTA"), "4a CAMARA", camara)) %>%
+  dplyr::filter(
+    title %in% c("PRO TEMPORE", "TITULAR"), !is.na(section),
+    section != "NAO IDENTIFICADO", camara %in% c("1a CAMARA")) %>%
+  dplyr::count(section, camara, turma, type_appeal, result) %>%
+  dplyr::mutate(perc = n / sum(n), n_tot = paste0("n = ", sum(n))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(resultado = factor(result, levels = rs_ord, ordered = TRUE)) %>%  
+  tidyr::unite(chamber, section, camara, turma, sep = "\n")
+
+aux %>%
+  ggplot(aes(x = type_appeal, y = perc, fill = result)) +
+  geom_bar(stat = "identity", position = "stack", alpha = .9) +
+  geom_text(aes(x = as.numeric(as.factor(type_appeal)), y = 1.1, label = n_tot), alpha=.9, size = 4) +
+  theme_bw() +
+  facet_wrap(~ chamber) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  scale_y_continuous(labels = scales::percent, breaks = 0:10/10, limits = c(0, 1.2))
+```
+
+#### Segunda seção
+
+```{r fig.width=10, fig.height=8}
+aux <- d_decisoes %>%
+  dplyr::mutate(
+    section = section %>%
+      abjutils::rm_accent() %>% 
+      stringr::str_to_upper() %>% 
+      stringr::str_replace_all("\\?", "a"),
+    camara = chamber %>%
+      abjutils::rm_accent() %>%
+      stringr::str_to_upper() %>%
+      stringr::str_replace_all(" - ", "\n") %>%
+      stringr::str_extract("(PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA)(?= CAMARA)"),
+    turma = ifelse(stringr::str_detect(chamber, "ESPECIAL"), "ESPECIAL", camara)) %>%
+  dplyr::mutate(
+    turma = ifelse(stringr::str_detect(turma, "PRIMEIRA"), "1a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "SEGUNDA"), "2a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "TERCEIRA"), "3a TURMA", turma),
+    camara = ifelse(stringr::str_detect(camara, "PRIMEIRA"), "1a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "SEGUNDA"), "2a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "TERCEIRA"), "3a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "QUARTA"), "4a CAMARA", camara)) %>%
+  dplyr::filter(
+    title %in% c("PRO TEMPORE", "TITULAR"), !is.na(section),
+    section != "NAO IDENTIFICADO", camara %in% c("2a CAMARA"),
+    chamber != "SEGUNDA TURMA ESPECIAL\n(VINCULADA A QUARTA CAMARA)") %>%
+  dplyr::count(section, camara, turma, type_appeal, result) %>%
+  dplyr::mutate(perc = n / sum(n), n_tot = paste0("n = ", sum(n))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(resultado = factor(result, levels = rs_ord, ordered = TRUE)) %>%  
+  tidyr::unite(chamber, section, camara, turma, sep = "\n")
+
+aux %>%
+  ggplot(aes(x = type_appeal, y = perc, fill = result)) +
+  geom_bar(stat = "identity", position = "stack", alpha = .9) +
+  geom_text(aes(x = as.numeric(as.factor(type_appeal)), y = 1.1, label = n_tot), alpha=.9, size = 4) +
+  theme_bw() +
+  facet_wrap(~ chamber) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  scale_y_continuous(labels = scales::percent, breaks = 0:10/10, limits = c(0, 1.2))
+```
+
+#### Terceira seção
+
+```{r fig.width=10, fig.height=8}
+aux <- d_decisoes %>%
+  dplyr::mutate(
+    section = section %>%
+      abjutils::rm_accent() %>% 
+      stringr::str_to_upper() %>% 
+      stringr::str_replace_all("\\?", "a"),
+    camara = chamber %>%
+      abjutils::rm_accent() %>%
+      stringr::str_to_upper() %>%
+      stringr::str_replace_all(" - ", "\n") %>%
+      stringr::str_extract("(PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA)(?= CAMARA)"),
+    turma = ifelse(stringr::str_detect(chamber, "ESPECIAL"), "ESPECIAL", camara)) %>%
+  dplyr::mutate(
+    turma = ifelse(stringr::str_detect(turma, "PRIMEIRA"), "1a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "SEGUNDA"), "2a TURMA", turma),
+    turma = ifelse(stringr::str_detect(turma, "TERCEIRA"), "3a TURMA", turma),
+    camara = ifelse(stringr::str_detect(camara, "PRIMEIRA"), "1a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "SEGUNDA"), "2a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "TERCEIRA"), "3a CAMARA", camara),
+    camara = ifelse(stringr::str_detect(camara, "QUARTA"), "4a CAMARA", camara)) %>%
+  dplyr::filter(
+    title %in% c("PRO TEMPORE", "TITULAR"), !is.na(section),
+    section != "NAO IDENTIFICADO", camara %in% c("3a CAMARA"),
+    !chamber %in% c("TERCEITA TURMA ESPECIAL\n(VINCULADA A QUARTA CAMARA)",
+      "SEGUNDA TURMA ESPECIAL\n(VINCULADA A QUARTA CAMARA)",
+      "PRIMEIRA TURMA ESPECIAL\n(VINCULADA A QUARTA CAMARA)")) %>%
+  dplyr::count(section, camara, turma, type_appeal, result) %>%
+  dplyr::mutate(perc = n / sum(n), n_tot = paste0("n = ", sum(n))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(resultado = factor(result, levels = rs_ord, ordered = TRUE)) %>%  
+  tidyr::unite(chamber, section, camara, turma, sep = "\n")
+
+aux %>%
+  ggplot(aes(x = type_appeal, y = perc, fill = result)) +
+  geom_bar(stat = "identity", position = "stack", alpha = .9) +
+  geom_text(aes(x = as.numeric(as.factor(type_appeal)), y = 1.1, label = n_tot), alpha=.9, size = 4) +
+  theme_bw() +
+  facet_wrap(~ chamber) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  scale_y_continuous(labels = scales::percent, breaks = 0:10/10, limits = c(0, 1.2))
+```

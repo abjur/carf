@@ -20,23 +20,23 @@ knitr::opts_chunk$set(
 
 ```{r, eval = FALSE}
 dir <- "example-data/"
-files <- carf::download_decision_year(2017, dir, min_page = 1, max_page = 3)
+files <- carf::download_decision_year(2014, dir, min_page = 1, max_page = 50)
 
-dir_2017 <- paste0(dir, "/2017")
-list.files(dir_2017)
+dir_2014 <- paste0(dir, "/2014")
+list.files(dir_2014)
 ```
 
 ```{r, echo = FALSE}
-list.files("example-data/2017/")
+list.files("example-data/2014/")
 ```
 
 ```{r, eval = FALSE}
-dir_page01 <- paste0(dir_2017, "/page_0001/")
-list.files(dir_2017)
+dir_page01 <- paste0(dir_2014, "/page_0001/")
+list.files(dir_2014)
 ```
 
 ```{r, echo = FALSE}
-list.files("example-data/2017/page_0001/")
+list.files("example-data/2014/page_0001/")
 ```
 
 ## Parsing jurisprudence data
@@ -46,7 +46,7 @@ parsed <- carf::parse_decision(files)
 ```
 
 ```{r, echo = FALSE}
-files <- list.files("example-data/2017/", pattern = "\\.html", recursive = TRUE, full.names = TRUE)
+files <- list.files("example-data/2014/", pattern = "\\.html", recursive = TRUE, full.names = TRUE)
 parsed <- carf::parse_decision(files)
 ```
 
