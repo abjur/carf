@@ -1,32 +1,75 @@
 
+#' Get informations about section of a lawsuit
+#'
+#' @param id a lawsuit id
+#' @param path directory where exists the directory of pdf decisions
+#' @return A tibble
+classificador_turma_ <- function(id, path){
+  #mudar aqui
+  pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
+  
+  pdf<-pdftools::pdf_text(pasta)[[1]]
+  
+  CSRF <- str_extract(pdf,'(CSRF)')
+  
+  secao <- if_else(is.na(CSRF),str_extract(pdf, '(S)[[0-9]?I?]'), 'CSRF')
+  camara <- if_else(is.na(CSRF),str_extract(pdf, '(C)[[0-9]?I?]'), 'CSRF')
+  turma <- str_extract(pdf, '(T)[[0-9]?I?]')
+  
+  secao <- case_when(secao == 'CSRF'~'CSRF',
+                     str_sub(secao,start = 2) == 'I'~ 'SECAO 1',
+                     T~str_c('SECAO ', str_sub(secao,start = 2)))
+  
+  camara <- case_when(camara == 'CSRF'~'CSRF',
+                      str_sub(camara,start = 2) == 'I'~ 'CAMARA 1',
+                      T~str_c('CAMARA ', str_sub(camara,start = 2)))
+  
+  ord <- case_when(!is.na(CSRF) ~'',
+                   str_detect(pdf, regex('turma ordinária', ignore_case = T))~'ORDINARIA',
+                   T~'EXTRAORDINARIA')
+  
+  turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('TURMA ', ord, ' 1'), str_c('TURMA ', ord, str_sub(turma,start = 2)))
+  
+  
+  
+  resp <- data_frame(n_processo = id,
+                     SECAO = secao,
+                     CAMARA = camara,
+                     TURMA = turma)
+  
+  
+  return(resp)
+}
+
 #' Consolidate decisions
 #'
 #' @param pages `pages` element returned by [parse_decision()]
 #' @param decisions `decisions` element returned by [parse_decision()]
 #' @return A tibble
 consolidate_decisions <- function(pages, decisions) {
-
+  
   # Get number of resolutions
   num_resolutions <- sum(pages$type_decision == "R")
-
+  
   # Create auxiliar table
   pages_aux <- pages %>%
     dplyr::filter(type_decision == "A") %>%
     dplyr::distinct(id_lawsuit, id_decision, .keep_all = TRUE) %>%
     dplyr::select(id_lawsuit, id_decision, date_publication)
-
+  
   # Get residue
   residue <- decisions %>%
+    filter(!is.na(id_lawsuit)) %>%
     dplyr::anti_join(pages_aux, c("id_lawsuit", "id_decision")) %>%
     dplyr::select(id_lawsuit, id_decision)
-
+  
   # Generate final result
   if (nrow(residue) == num_resolutions) {
     out <- decisions %>%
       dplyr::distinct(id_lawsuit, id_decision, .keep_all = TRUE) %>%
       dplyr::inner_join(pages_aux, c("id_lawsuit", "id_decision"))
   }
-
+  
   return(out)
 }
 

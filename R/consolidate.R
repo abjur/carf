@@ -1,6 +1,22 @@
 
 #' Consolidate pages, decisions, and comprot
 #'
+#' @param id a list containing one or more lawsuits id's (in numeric format if's possible)
+#' @param path directory where exists the directory of pdf decisions
+#' @return A tibble with aggregated data about sections
+#'
+#' @export
+classificador_turma <- function(id, path){
+
+  resp <- purrr::map(id, classificador_turma_, path) %>%
+    purrr::reduce(rbind)
+
+  return(resp)
+
+}
+
+#' Consolidate pages, decisions, and comprot
+#'
 #' @param pages `pages` element returned by [parse_decision()]
 #' @param decisions `decisions` element returned by [parse_decision()]
 #' @param comprot Table returned by [get_comprot()]

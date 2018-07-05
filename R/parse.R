@@ -39,7 +39,8 @@ parse_decision <- function(file, type = "both", verbose = TRUE) {
   if (type %in% c("both", "decision") && length(decisions) > 0) {
 
     # Iterate over every decision
-    decisions_df <- purrr::map_dfr(decisions, parse_decision_, verbose, pb)
+    decisions_df <- purrr::map_dfr(decisions, parse_decision_, verbose, pb) %>%
+      filter(!is.na(id_lawsuit))
   }
 
   # Return only the necessary tables

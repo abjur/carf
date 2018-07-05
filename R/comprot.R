@@ -30,7 +30,7 @@ get_comprot <- function(id) {
 #'
 #' @param id Character vector with lawsuit ID
 #' @return One row containing lawsuit's comprot data
-get_comprot_ <- function(id) {
+get_comprot_ <- purrr::possibly(function(id) {
 
   # Fabricate a timestamp
   ts <- stats::runif(1, 0, 999) %>%
@@ -80,4 +80,4 @@ get_comprot_ <- function(id) {
       "name_origin", "id_destination", "name_destination"))
 
   return(dplyr::mutate(lwst, events = list(movs)))
-}
+},'deu ruim')

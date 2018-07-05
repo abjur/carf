@@ -1,4 +1,22 @@
 
+#' Remasterized download_lawsuits function
+#'
+#' @param id A character vector with one or more lawsuit numbers (in numeric format if's possible)
+#' @param path The directory where to save downloaded files
+#' @param download_pdfs Whether or not to download the attachments
+#'
+#' @export
+download_lawsuit_new <-function(id, path,download_pdfs = TRUE){
+  
+  pb <- progress_bar$new(
+    format = " downloading [:bar] :percent eta: :eta",
+    total = length(id), clear = FALSE, width= 60)
+  
+  files <- purrr::map(id, download_lawsuit_v2, path, download_pdfs,pb)
+  
+}
+
+
 #' Download lawsuits from the CARF website
 #'
 #' @param id A character vector with one or more lawsuit numbers

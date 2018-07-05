@@ -1,3 +1,31 @@
+#' remasterized auxiliary function to download one lawsuit
+#'
+#' @param id Lawsuit number
+#' @param path Folder where to save files
+#' @param interval A vector with two dates for beginning and end of query
+#' @param download_pdfs Whether or not to download the attachments
+#' 
+download_lawsuit_v2 <- function(id, path,download_pdfs = TRUE,pb){
+    
+    interval <- c("02/2016", "07/2018")
+    
+    dir.create(path, FALSE, TRUE)
+    path <- normalizePath(path)
+    
+    download_lawsuit_(id, path, interval, download_pdfs)
+    
+    arq <- str_c(path,'/',id)
+    
+    i=1
+    while(i <= 5){
+      if(!dir.exists(arq)){
+        download_lawsuit_(id, path, interval, download_pdfs)
+      }
+      i=i+1
+    }
+    pb$tick()
+  }
+
 
 #' Auxiliary function to download one lawsuit
 #'
