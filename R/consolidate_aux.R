@@ -1,3 +1,15 @@
+#' Get information about pdf lawsuit
+#'
+#' @param path directory where exists the directory of pdf decisions
+#' @return A list
+
+puxa_pdf_ <- possibly(function(path){
+  
+  pdf <- pdftools::pdf_text(path)
+  
+  return(pdf[[1]])
+}, 'pdf nao encontrado')
+
 
 #' Get informations about section of a lawsuit
 #'
@@ -8,7 +20,7 @@ classificador_turma_ <- function(id, path){
   #mudar aqui
   pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
   
-  pdf<-pdftools::pdf_text(pasta)[[1]]
+  pdf<-puxa_pdf_(pasta)
   
   CSRF <- str_extract(pdf,'(CSRF)')
   
@@ -79,7 +91,7 @@ consolidate_decisions <- function(pages, decisions) {
 #' @param comprot Table returned by [get_comprot()]
 #' @return A tibble
 consolidate_origins <- function(data, comprot) {
-
+  
   # Create auxiliary table with origin data
   comprot_aux <- comprot %>%
     dplyr::mutate(type_party = ifelse(
@@ -89,7 +101,7 @@ consolidate_origins <- function(data, comprot) {
     dplyr::mutate(origin = ifelse(
       stringr::str_detect(subject, "AUTO DE INFRACAO|IMPUGNACAO|MULTA"),
       "auto_infracao_impugnacao_multa", "outros"))
-
+  
   # Create final table
   dplyr::inner_join(data, comprot_aux, c("id_lawsuit" = "id"))
 }
@@ -99,20 +111,20 @@ consolidate_origins <- function(data, comprot) {
 #' @param data Data returned by [consolidate_origins()]
 #' @return A tibble
 consolidate_states <- function(data) {
-
+  
   # State abbreviations
   states <- c(
     "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA",
     "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
     "RR", "RS", "SC", "SE", "SP", "TO")
-
+  
   # Auxiliary funcion for cleaning the state data
   detect_uf <- function(state, origin, pattern_state, pattern_origin, replacement) {
     ifelse(
       state == pattern_state & stringr::str_detect(origin, pattern_origin),
       replacement, state)
   }
-
+  
   # Create a table with data on lawsuit ID and their origin states
   origins <- jurisprudence_origins %>%
     dplyr::mutate(state = stringr::str_sub(origin, -2)) %>%
@@ -128,7 +140,7 @@ consolidate_states <- function(data) {
         detect_uf(origin, "VAZIO", "\\-VIT", "RJ")) %>%
     dplyr::distinct(id, .keep_all = TRUE) %>%
     dplyr::select(id, state)
-
+  
   # Add state data to final dataset
   data %>%
     dplyr::mutate(five_digs = stringr::str_sub(id_lawsuit, 1, 5)) %>%
@@ -142,18 +154,18 @@ consolidate_states <- function(data) {
 #' @param data Data returned by [consolidate_states()]
 #' @return A tibble
 consolidate_appeals <- function(data) {
-
+  
   # Regex for getting appeal types
   type_regex <- stringr::regex("embargo|extrao|agrav|dilig|div", ignore_case = TRUE)
-
+  
   # Detect kinds of appeals and replace them
   detect_appeal <- function(type_appeal, summary, pattern_summary, replacement) {
     clean_txt <- . %>% abjutils::rm_accent() %>% stringr::str_to_lower()
     ifelse(
       stringr::str_detect(type_appeal, "INFORM") & stringr::str_detect(clean_txt(summary),
-      pattern_summary), replacement, type_appeal)
+                                                                       pattern_summary), replacement, type_appeal)
   }
-
+  
   # Create final table
   data %>%
     dplyr::mutate(type_appeal = ifelse(
@@ -179,13 +191,13 @@ consolidate_appeals <- function(data) {
 #' @param data Data returned by [consolidate_appeals()]
 #' @return A tibble
 consolidate_votes <- function(data) {
-
+  
   # Regex
   prtc_regex <- stringr::regex("Participaram.+(lheir)[^ ]+ ?\\:?")
   unmt_regex <- stringr::regex("por unanimidade", ignore_case = TRUE)
   mjrt_regex <- stringr::regex("por maioria|maioria de votos", ignore_case = TRUE)
   qalt_regex <- stringr::regex("(por|pelo)( voto de)? qualidade", ignore_case = TRUE)
-
+  
   # Create vote column
   data %>%
     dplyr::mutate(
@@ -209,7 +221,7 @@ consolidate_votes <- function(data) {
 #' @param data Data returned by [consolidate_votes()]
 #' @return A tibble
 consolidate_results <- function(data) {
-
+  
   # Regex
   dn <- "negar?(do)?(am)? (o )?provimento|negou se (o )?provimento|recurso nao provido"
   gv <- "dar?(do)? (o )?provimento|deu se (o )?provimento|recurso provido"
@@ -217,7 +229,7 @@ consolidate_results <- function(data) {
   dl <- "diligencia"
   uk <- "[^a-z0-9]conhec"
   nl <- "nul(a|o|i)"
-
+  
   data %>%
     dplyr::mutate(
       # Clean decision
@@ -267,7 +279,7 @@ consolidate_results <- function(data) {
 #' @param data Data returned by [consolidate_results()]
 #' @return A tibble
 consolidate_taxes <- function(data) {
-
+  
   # Regex for taxes
   rgx <- purrr::partial(stringr::regex, ignore_case = TRUE)
   taxes <- list(
@@ -286,7 +298,7 @@ consolidate_taxes <- function(data) {
     simples = rgx("simples"),
     cpmf = rgx("cpmf"),
     outros = rgx("outros|diversos"))
-
+  
   # Join all texts
   data <- data %>%
     dplyr::mutate(
@@ -294,7 +306,7 @@ consolidate_taxes <- function(data) {
       subject2 = clean_text(subject),
       tax2 = clean_text(tax),
       all_texts = paste(summary2, subject2, tax2))
-
+  
   # Create one column for each tax
   for (i in seq_along(taxes)) {
     name <- stringr::str_c("tax_", names(taxes)[i])
@@ -305,7 +317,7 @@ consolidate_taxes <- function(data) {
           stringr::str_detect(taxes[[i]]) %>%
           dplyr::if_else(title, ""))
   }
-
+  
   # Create final table
   data %>%
     tidyr::unite(taxes, dplyr::starts_with("tax_"), sep = " ") %>%
@@ -326,7 +338,7 @@ consolidate_taxes <- function(data) {
 #' @param data Data returned by [consolidate_taxes()]
 #' @return A tibble
 consolidate_rapporteurs <- function(data) {
-
+  
   # Aux function for cleaning rapporteurs
   clean_rapporteur <- . %>%
     abjutils::rm_accent() %>%
@@ -339,12 +351,12 @@ consolidate_rapporteurs <- function(data) {
     stringr::str_replace_all("^CONSELHEIRO?A? ", "") %>%
     stringr::str_trim() %>%
     stringr::str_replace_all("NAO SE APLICA|RELATOR|^$|^MAR$", "VAZIO/NAO SE APLICA")
-
+  
   # Count rapporteurs
   rapporteur_count <- data %>%
     dplyr::mutate(rapporteur = clean_rapporteur(rapporteur)) %>%
     dplyr::count(rapporteur, sort = TRUE)
-
+  
   # Clean rapporteurs
   rapporteurs <- rapporteur_data %>%
     dplyr::filter(rapporteur != "VAGO") %>%
@@ -358,14 +370,14 @@ consolidate_rapporteurs <- function(data) {
       rapporteur = ifelse(
         rapporteur == "ANDRE LUIS MARISCO LOMBARDI",
         "ANDRE LUIS MARSICO LOMBARDI", rapporteur))
-
+  
   # Create auxiliary table
   rapporteur_aux <- rapporteur_count %>%
     dplyr::select(-n) %>%
     dplyr::filter(!stringr::str_detect(rapporteur, "VAZIO")) %>%
     dplyr::inner_join(rapporteur_goliva, "rapporteur") %>%
     dplyr::select(-n)
-
+  
   # Finalize rapporteurs
   rapporteur_final <- rapporteur_count %>%
     dplyr::select(-n) %>%
@@ -382,7 +394,7 @@ consolidate_rapporteurs <- function(data) {
       section = ifelse(n > 1, NA, section)) %>%
     dplyr::select(-n) %>%
     dplyr::distinct(rapporteur, .keep_all = TRUE)
-
+  
   # Create final table
   data %>%
     dplyr::mutate(rapporteur = clean_rapporteur(rapporteur)) %>%
@@ -395,8 +407,8 @@ consolidate_rapporteurs <- function(data) {
       section = ifelse(
         stringr::str_detect(section, "1"), "PRIMEIRA SECAO",
         ifelse(stringr::str_detect(section, "2"), "SEGUNDA SECAO",
-        ifelse(stringr::str_detect(section, "3"), "TERCEIRA SECAO",
-        section))))
+               ifelse(stringr::str_detect(section, "3"), "TERCEIRA SECAO",
+                      section))))
 }
 
 #' Consolidate chambers
@@ -404,10 +416,10 @@ consolidate_rapporteurs <- function(data) {
 #' @param data Data returned by [consolidate_rapporteurs()]
 #' @return A tibble
 consolidate_chambers <- function(data) {
-
+  
   # Shortcut for empty keywords
   empty <- c("VAZIO", "N\u00c3O IDENTIFICADO")
-
+  
   # Create final table
   data %>%
     dplyr::mutate(
@@ -419,7 +431,7 @@ consolidate_chambers <- function(data) {
           section %in% empty, "PRIMEIRA SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "FINSOCIAL|PIS|COFINS|CPMF|II|IPI") &
-        section %in% empty, "TERCEIRA SECAO", section),
+          section %in% empty, "TERCEIRA SECAO", section),
       section = ifelse(section %in% empty, "N\u00c3O IDENTIFICADO", section),
       chamber = ifelse(chamber %in% empty, "N\u00c3O IDENTIFICADO", chamber))
 }
