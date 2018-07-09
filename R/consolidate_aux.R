@@ -40,7 +40,7 @@ classificador_turma_ <- function(id, path){
                    str_detect(pdf, regex('turma ordinária', ignore_case = T))~'ORDINARIA',
                    T~'EXTRAORDINARIA')
   
-  turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('1a TURMA ', ord), str_c(str_sub(turma,start = 2), 'a TURMA', ord))
+  turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('1a TURMA ', ord), str_c(str_sub(turma,start = 2), 'a TURMA ', ord))
   
   
   
