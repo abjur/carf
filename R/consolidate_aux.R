@@ -20,7 +20,8 @@ classificador_turma_ <- function(id, path){
   #mudar aqui
   pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
   
-  pdf<-puxa_pdf_(pasta)
+  pdf<-puxa_pdf_(pasta) %>%
+    str_trim
   
   CSRF <- str_extract(pdf,'(CSRF)')
   
@@ -37,7 +38,7 @@ classificador_turma_ <- function(id, path){
                       T~str_c( str_sub(camara,start = 2),'a CAMARA'))
   
   ord <- case_when(!is.na(CSRF) ~'',
-                   str_detect(pdf, regex('turma ordinária', ignore_case = T))~'ORDINARIA',
+                   str_detect(pdf, regex('ordinária', ignore_case = T)) | str_detect(pdf, regex('ordinaria', ignore_case = T)) ~'ORDINARIA',
                    T~'EXTRAORDINARIA')
   
   turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('1a TURMA ', ord), str_c(str_sub(turma,start = 2), 'a TURMA ', ord))
