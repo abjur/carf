@@ -29,18 +29,18 @@ classificador_turma_ <- function(id, path){
   turma <- str_extract(pdf, '(T)[[0-9]?I?]')
   
   secao <- case_when(secao == 'CSRF'~'CSRF',
-                     str_sub(secao,start = 2) == 'I'~ 'SECAO 1',
-                     T~str_c('SECAO ', str_sub(secao,start = 2)))
+                     str_sub(secao,start = 2) == 'I'~ '1a SECAO',
+                     T~str_c(str_sub(secao,start = 2), 'a SECAO'))
   
   camara <- case_when(camara == 'CSRF'~'CSRF',
-                      str_sub(camara,start = 2) == 'I'~ 'CAMARA 1',
-                      T~str_c('CAMARA ', str_sub(camara,start = 2)))
+                      str_sub(camara,start = 2) == 'I'~ '1a CAMARA',
+                      T~str_c( str_sub(camara,start = 2),'a CAMARA'))
   
   ord <- case_when(!is.na(CSRF) ~'',
                    str_detect(pdf, regex('turma ordinária', ignore_case = T))~'ORDINARIA',
                    T~'EXTRAORDINARIA')
   
-  turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('TURMA ', ord, ' 1'), str_c('TURMA ', ord, str_sub(turma,start = 2)))
+  turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('1a TURMA ', ord), str_c(str_sub(turma,start = 2), 'a TURMA', ord))
   
   
   
