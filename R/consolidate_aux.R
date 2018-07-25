@@ -44,6 +44,86 @@ classificador_turma_ <- function(id, path){
   turma <- if_else(str_sub(turma,start = 2) == 'I', str_c('1a TURMA ', ord), str_c(str_sub(turma,start = 2), 'a TURMA ', ord))
   
   
+  #Utiliza tabela da dirlene
+  secao <- ifelse(str_detect(secao, '1') |
+                    str_detect(secao, '2') |
+                    str_detect(secao, '3') |
+                    str_detect(secao, 'CSRF'), secao, 'NAO IDENTIFICADO')
+  
+  camara <- ifelse(str_detect(camara, '1') |
+                     str_detect(camara, '2') |
+                     str_detect(camara, '3') |
+                     str_detect(camara, '4') |
+                     (str_detect(camara, 'CSRF') & str_detect(secao, 'CSRF')),camara, 'NAO IDENTIFICADO')
+  
+  
+  turma <- case_when(str_detect(secao, '1') & 
+                       str_detect(camara, '1') &
+                       str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')~turma,
+                     
+                     str_detect(secao, '1') &
+                       str_detect(camara, '2') &
+                       str_detect(turma,'1') & str_detect(turma,'ORDINARIA')~turma,
+                     
+                     str_detect(secao, '1') &
+                       str_detect(camara, '3') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '1') &
+                       str_detect(camara, '4') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '2') &
+                       str_detect(camara, '1') &
+                       ((str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '2') &
+                       str_detect(camara, '2') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '2') &
+                       str_detect(camara, '3') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')))~turma,
+                     
+                     str_detect(secao, '2') &
+                       str_detect(camara, '4') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '3') &
+                       str_detect(camara, '1') &
+                       ((str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     str_detect(secao, '3') &
+                       str_detect(camara, '2') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')))~turma,
+                     
+                     
+                     str_detect(secao, '3') &
+                       str_detect(camara, '3') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     
+                     str_detect(secao, '3') &
+                       str_detect(camara, '4') &
+                       ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
+                          (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
+                          (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
+                     
+                     (str_detect(secao, 'CSRF') | str_detect(camara, 'CSRF')) & 
+                       (str_detect(turma, '1') | str_detect(turma, '2') | str_detect(turma, '3'))~turma,
+                     
+                     
+                     T~'NAO IDENTIFICADO')
   
   resp <- data_frame(n_processo = id,
                      SECAO = secao,
