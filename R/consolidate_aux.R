@@ -3,7 +3,7 @@
 #' @param path directory where exists the directory of pdf decisions
 #' @return A list
 
-puxa_pdf_ <- possibly(function(path){
+puxa_pdf_ <- purrr::possibly(function(path){
   
   pdf <- pdftools::pdf_text(path)
   
