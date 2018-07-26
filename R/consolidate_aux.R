@@ -2,7 +2,6 @@
 #'
 #' @param path directory where exists the directory of pdf decisions
 #' @return A list
-
 puxa_pdf_ <- purrr::possibly(function(path){
   
   pdf <- pdftools::pdf_text(path)
@@ -20,7 +19,7 @@ classificador_turma_ <- function(id, path){
   #mudar aqui
   pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
   
-  pdf<-puxa_pdf_(pasta) %>%
+  pdf<- puxa_pdf_(pasta) %>%
     stringr::str_trim()
     
   CSRF <- str_extract(pdf,'(CSRF)')
@@ -39,7 +38,7 @@ classificador_turma_ <- function(id, path){
   
   ord <- case_when(!is.na(CSRF) ~'',
                    stringr::str_detect(pdf, stringr::regex('Ordinária', ignore_case = T)) | stringr::str_detect(pdf, stringr::regex('Ordinaria', ignore_case = T)) ~'ORDINARIA',
-                   T~'Javé')
+                   T~'EXTRAORDINARIA')
   
   turma <- if_else(stringr::str_sub(turma,start = 2) == 'I', stringr::str_c('1a TURMA ', ord), stringr::str_c(stringr::str_sub(turma,start = 2), 'a TURMA ', ord))
   
