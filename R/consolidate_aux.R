@@ -9,7 +9,6 @@ puxa_pdf_ <- purrr::possibly(function(path){
   return(pdf[[1]])
 }, 'pdf nao encontrado')
 
-
 #' Get informations about section of a lawsuit
 #'
 #' @param id a lawsuit id
