@@ -4,7 +4,7 @@
 \alias{get_comprot_}
 \title{Get the comprot data for one lawsuit}
 \usage{
-get_comprot_(id)
+get_comprot_(...)
 }
 \arguments{
 \item{id}{Character vector with lawsuit ID}
