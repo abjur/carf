@@ -21,7 +21,7 @@ classificador_turma_ <- function(id, path){
   pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
   
   pdf<-puxa_pdf_(pasta) %>%
-    str_trim
+    stringr::str_trim
   
   CSRF <- str_extract(pdf,'(CSRF)')
   
