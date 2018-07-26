@@ -39,7 +39,7 @@ classificador_turma_ <- function(id, path){
   
   ord <- case_when(!is.na(CSRF) ~'',
                    stringr::str_detect(pdf, stringr::regex('Ordinária', ignore_case = T)) | stringr::str_detect(pdf, stringr::regex('Ordinaria', ignore_case = T)) ~'ORDINARIA',
-                   T~'EXTRAORDINARIA')
+                   T~'Javé')
   
   turma <- if_else(stringr::str_sub(turma,start = 2) == 'I', stringr::str_c('1a TURMA ', ord), stringr::str_c(stringr::str_sub(turma,start = 2), 'a TURMA ', ord))
   
