@@ -19,112 +19,46 @@ classificador_turma_ <- function(id, path){
   pasta <- stringr::str_c(path,'/',id,"/decisao_",id,'.pdf')
   
   pdf<- puxa_pdf_(pasta) %>%
-    stringr::str_trim()
-    
-  CSRF <- str_extract(pdf,'(CSRF)')
+    stringr::str_trim() %>%
+    stringr::str_to_lower() %>%
+    rm_accent
   
-  secao <- if_else(is.na(CSRF),str_extract(pdf, '(S)[[0-9]?I?]'), 'CSRF')
-  camara <- if_else(is.na(CSRF),str_extract(pdf, '(C)[[0-9]?I?]'), 'CSRF')
-  turma <- str_extract(pdf, '(T)[[0-9]?I?]')
+  secao <- case_when(!is.na(str_extract(pdf, '[0-9]ª secao'))~ stringr::str_extract(pdf, '[0-9]ª secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
+                     str_detect(pdf,'primeira secao') ~ '1a SECAO',
+                     str_detect(pdf,'segunda secao') ~ '2a SECAO',
+                     str_detect(pdf,'terceira secao') ~ '3a SECAO',
+                     T~'NAO IDENTIFICADO')
   
-  secao <- case_when(secao == 'CSRF'~'CSRF',
-                     str_sub(secao,start = 2) == 'I'~ '1a SECAO',
-                     T~str_c(str_sub(secao,start = 2), 'a SECAO'))
+  camara <- case_when(!is.na(str_extract(pdf, '[0-9]ª camara'))~ stringr::str_extract(pdf, '[0-9]ª camara') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a CAMARA'),
+                      str_detect(pdf,'primeira camara') ~ '1a CAMARA',
+                      str_detect(pdf,'segunda camara') ~ '2a CAMARA',
+                      str_detect(pdf,'terceira camara') ~ '3a CAMARA',
+                      str_detect(pdf,'quarta camara') ~ '4a CAMARA',
+                      T~'NAO IDENTIFICADO')
   
-  camara <- case_when(camara == 'CSRF'~'CSRF',
-                      str_sub(camara,start = 2) == 'I'~ '1a CAMARA',
-                      T~str_c( str_sub(camara,start = 2),'a CAMARA'))
+  turma_ord <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma ordinaria'))~ stringr::str_extract(pdf, '[0-9]ª turma ordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ORDINARIA'),
+                         str_detect(pdf,'primeira turma ordinaria') ~ '1a TURMA ORDINARIA',
+                         str_detect(pdf,'segunda turma ordinaria') ~ '2a TURMA ORDINARIA',
+                         str_detect(pdf,'terceira turma ordinaria') ~ '3a TURMA ORDINARIA',
+                         T~'NAO IDENTIFICADO')
   
-  ord <- dplyr::case_when(!is.na(CSRF) ~'',
-                   stringr::str_detect(pdf, stringr::regex('Ordinária', ignore_case = T)) | stringr::str_detect(pdf, stringr::regex('Ordinaria', ignore_case = T)) ~ 'ORDINARIA',
-                   T~'EXTRAORDINARIA')
+  turma_espec <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma especial'))~ stringr::str_extract(pdf, '[0-9]ª turma especial') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ESPECIAL'),
+                           str_detect(pdf,'primeira turma especial') ~ '1a TURMA ESPECIAL',
+                           str_detect(pdf,'segunda turma especial') ~ '2a TURMA ESPECIAL',
+                           str_detect(pdf,'terceira turma especial') ~ '3a TURMA ESPECIAL',
+                           T~'NAO IDENTIFICADO')
   
-  turma <- dplyr::if_else(stringr::str_sub(turma,start = 2) == 'I', stringr::str_c('1a TURMA ', ord), stringr::str_c(stringr::str_sub(turma,start = 2), 'a TURMA ', ord))
+  turma_extra <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma extraordinaria'))~ stringr::str_extract(pdf, '[0-9]ª turma extraordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA EXTRAORDINARIA'),
+                           str_detect(pdf,'primeira turma extraordinaria') ~ '1a TURMA EXTRAORDINARIA',
+                           str_detect(pdf,'segunda turma extraordinaria') ~ '2a TURMA EXTRAORDINARIA',
+                           str_detect(pdf,'terceira turma extraordinaria') ~ '3a TURMA EXTRAORDINARIA',
+                           T~'NAO IDENTIFICADO')
   
   
-  #Utiliza tabela da dirlene
-  secao <- ifelse(str_detect(secao, '1') |
-                    str_detect(secao, '2') |
-                    str_detect(secao, '3') |
-                    str_detect(secao, 'CSRF'), secao, 'NAO IDENTIFICADO')
-  
-  camara <- ifelse(str_detect(camara, '1') |
-                     str_detect(camara, '2') |
-                     str_detect(camara, '3') |
-                     str_detect(camara, '4') |
-                     (str_detect(camara, 'CSRF') & str_detect(secao, 'CSRF')),camara, 'NAO IDENTIFICADO')
-  
-  turma <- ifelse(str_detect(turma, '1') |
-                    str_detect(turma, '2') |
-                    str_detect(turma, '3'),turma, 'NAO IDENTIFICADO')
-  
-  # turma <- case_when(str_detect(secao, '1') & 
-  #                      str_detect(camara, '1') &
-  #                      str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')~turma,
-  #                    
-  #                    str_detect(secao, '1') &
-  #                      str_detect(camara, '2') &
-  #                      str_detect(turma,'1') & str_detect(turma,'ORDINARIA')~turma,
-  #                    
-  #                    str_detect(secao, '1') &
-  #                      str_detect(camara, '3') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '1') &
-  #                      str_detect(camara, '4') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '2') &
-  #                      str_detect(camara, '1') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '2') &
-  #                      str_detect(camara, '2') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '2') &
-  #                      str_detect(camara, '3') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '2') &
-  #                      str_detect(camara, '4') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '3') &
-  #                      str_detect(camara, '1') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    str_detect(secao, '3') &
-  #                      str_detect(camara, '2') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')))~turma,
-  #                    
-  #                    
-  #                    str_detect(secao, '3') &
-  #                      str_detect(camara, '3') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'2') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    
-  #                    str_detect(secao, '3') &
-  #                      str_detect(camara, '4') &
-  #                      ((str_detect(turma,'1') & str_detect(turma,'ORDINARIA')) |
-  #                         (str_detect(turma,'2') & str_detect(turma,'ORDINARIA')) | 
-  #                         (str_detect(turma,'3') & str_detect(turma,'EXTRAORDINARIA')))~turma,
-  #                    
-  #                    (str_detect(secao, 'CSRF') | str_detect(camara, 'CSRF')) & 
-  #                      (str_detect(turma, '1') | str_detect(turma, '2') | str_detect(turma, '3'))~turma,
-  #                    
-  #                    
-  #                    T~'NAO IDENTIFICADO')
+  turma <- case_when(turma_ord != 'NAO IDENTIFICADO' ~ turma_ord,
+                     turma_espec != 'NAO IDENTIFICADO' ~ turma_espec,
+                     turma_extra != 'NAO IDENTIFICADO' ~ turma_extra,
+                     T~'NAO IDENTIFICADO')
   
   resp <- data_frame(n_processo = id,
                      SECAO = secao,
@@ -256,9 +190,9 @@ consolidate_appeals <- function(data) {
     dplyr::mutate(
       type_appeal = type_appeal %>%
         detect_appeal(summary, "recurso volunt", "RECURSO VOLUNTARIO") %>%
-        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\u00cdCIO") %>%
+        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\u00cdCIO") %>%
         detect_appeal(summary, "recurso volunt", "RECURSO VOLUNTARIO") %>%
-        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\u00cdCIO")) %>%
+        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\u00cdCIO")) %>%
     dplyr::mutate(
       date_publication = lubridate::dmy(date_publication),
       date_session = lubridate::dmy(date_session)) %>%
@@ -482,8 +416,8 @@ consolidate_rapporteurs <- function(data) {
     dplyr::mutate(rapporteur = clean_rapporteur(rapporteur)) %>%
     dplyr::left_join(rapporteur_final, "rapporteur") %>%
     dplyr::mutate(
-      title = ifelse(is.na(title), "N\u00c3O IDENTIFICADO", title),
-      type = ifelse(is.na(type), "N\u00c3O IDENTIFICADO", type),
+      title = ifelse(is.na(title), "N\\u00c3O IDENTIFICADO", title),
+      type = ifelse(is.na(type), "N\\u00c3O IDENTIFICADO", type),
       chamber = ifelse(is.na(chamber), "VAZIO", chamber),
       section = ifelse(is.na(section), "VAZIO", section),
       section = ifelse(
@@ -500,20 +434,20 @@ consolidate_rapporteurs <- function(data) {
 consolidate_chambers <- function(data) {
   
   # Shortcut for empty keywords
-  empty <- c("VAZIO", "N\u00c3O IDENTIFICADO")
+  empty <- c("VAZIO", "N\\u00c3O IDENTIFICADO")
   
   # Create final table
   data %>%
     dplyr::mutate(
       chamber = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", chamber),
       section = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", section),
-      section = ifelse(type_party == "F\u00edsica" & section %in% empty, "SEGUNDA SECAO", section),
+      section = ifelse(type_party == "F\\u00edsica" & section %in% empty, "SEGUNDA SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "IRPJ|CSL|SIMPLES") &
           section %in% empty, "PRIMEIRA SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "FINSOCIAL|PIS|COFINS|CPMF|II|IPI") &
           section %in% empty, "TERCEIRA SECAO", section),
-      section = ifelse(section %in% empty, "N\u00c3O IDENTIFICADO", section),
-      chamber = ifelse(chamber %in% empty, "N\u00c3O IDENTIFICADO", chamber))
+      section = ifelse(section %in% empty, "N\\u00c3O IDENTIFICADO", section),
+      chamber = ifelse(chamber %in% empty, "N\\u00c3O IDENTIFICADO", chamber))
 }
