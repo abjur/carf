@@ -26,38 +26,38 @@ classificador_turma_ <- function(id, path){
   csrf <- case_when(str_detect(pdf, 'csrf')~'CSRF',
                     T~'NAO IDENTIFICADO')
   
-  secao <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa secao'))~ stringr::str_extract(pdf, '[0-9]\u00aa secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
+  secao <- case_when(!is.na(str_extract(pdf, '[0-9](\u00aa)? ?secao'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
                      str_detect(pdf,'primeira secao') ~ '1a SECAO',
                      str_detect(pdf,'segunda secao') ~ '2a SECAO',
                      str_detect(pdf,'terceira secao') ~ '3a SECAO',
                      T~'NAO IDENTIFICADO')
   
-  camara <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa camara'))~ stringr::str_extract(pdf, '[0-9]\u00aa camara') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a CAMARA'),
+  camara <- case_when(!is.na(str_extract(pdf, '[0-9](\u00aa)? ?camara'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?camara') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a CAMARA'),
                       str_detect(pdf,'primeira camara') ~ '1a CAMARA',
                       str_detect(pdf,'segunda camara') ~ '2a CAMARA',
                       str_detect(pdf,'terceira camara') ~ '3a CAMARA',
                       str_detect(pdf,'quarta camara') ~ '4a CAMARA',
                       T~'NAO IDENTIFICADO')
   
-  turma_ord <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma ordinaria'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma ordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ORDINARIA'),
+  turma_ord <- case_when(!is.na(str_extract(pdf, '[0-9](\u00aa)? ?turma ordinaria'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?turma ordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ORDINARIA'),
                          str_detect(pdf,'primeira turma ordinaria') ~ '1a TURMA ORDINARIA',
                          str_detect(pdf,'segunda turma ordinaria') ~ '2a TURMA ORDINARIA',
                          str_detect(pdf,'terceira turma ordinaria') ~ '3a TURMA ORDINARIA',
                          T~'NAO IDENTIFICADO')
   
-  turma_espec <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma especial'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma especial') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ESPECIAL'),
+  turma_espec <- case_when(!is.na(str_extract(pdf, '[0-9](\u00aa)? ?turma especial'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?turma especial') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ESPECIAL'),
                            str_detect(pdf,'primeira turma especial') ~ '1a TURMA ESPECIAL',
                            str_detect(pdf,'segunda turma especial') ~ '2a TURMA ESPECIAL',
                            str_detect(pdf,'terceira turma especial') ~ '3a TURMA ESPECIAL',
                            T~'NAO IDENTIFICADO')
   
-  turma_extra <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma extraordinaria'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma extraordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA EXTRAORDINARIA'),
+  turma_extra <- case_when(!is.na(str_extract(pdf, '[0-9](\u00aa)? ?turma extraordinaria'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?turma extraordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA EXTRAORDINARIA'),
                            str_detect(pdf,'primeira turma extraordinaria') ~ '1a TURMA EXTRAORDINARIA',
                            str_detect(pdf,'segunda turma extraordinaria') ~ '2a TURMA EXTRAORDINARIA',
                            str_detect(pdf,'terceira turma extraordinaria') ~ '3a TURMA EXTRAORDINARIA',
                            T~'NAO IDENTIFICADO')
   
-  turma_csrf <- case_when(csrf != 'NAO IDENTIFICADO' & !is.na(str_extract(pdf, '[0-9]\u00aa turma'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA'),
+  turma_csrf <- case_when(csrf != 'NAO IDENTIFICADO' & !is.na(str_extract(pdf, '[0-9](\u00aa)? ?turma'))~ stringr::str_extract(pdf, '[0-9](\u00aa)? ?turma') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA'),
                           csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'primeira turma') ~ '1a TURMA',
                           csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'segunda turma') ~ '2a TURMA',
                           csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'terceira turma') ~ '3a TURMA',
