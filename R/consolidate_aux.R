@@ -23,32 +23,32 @@ classificador_turma_ <- function(id, path){
     stringr::str_to_lower() %>%
     rm_accent
   
-  secao <- case_when(!is.na(str_extract(pdf, '[0-9]ª secao'))~ stringr::str_extract(pdf, '[0-9]ª secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
+  secao <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa secao'))~ stringr::str_extract(pdf, '[0-9]\u00aa secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
                      str_detect(pdf,'primeira secao') ~ '1a SECAO',
                      str_detect(pdf,'segunda secao') ~ '2a SECAO',
                      str_detect(pdf,'terceira secao') ~ '3a SECAO',
                      T~'NAO IDENTIFICADO')
   
-  camara <- case_when(!is.na(str_extract(pdf, '[0-9]ª camara'))~ stringr::str_extract(pdf, '[0-9]ª camara') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a CAMARA'),
+  camara <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa camara'))~ stringr::str_extract(pdf, '[0-9]\u00aa camara') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a CAMARA'),
                       str_detect(pdf,'primeira camara') ~ '1a CAMARA',
                       str_detect(pdf,'segunda camara') ~ '2a CAMARA',
                       str_detect(pdf,'terceira camara') ~ '3a CAMARA',
                       str_detect(pdf,'quarta camara') ~ '4a CAMARA',
                       T~'NAO IDENTIFICADO')
   
-  turma_ord <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma ordinaria'))~ stringr::str_extract(pdf, '[0-9]ª turma ordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ORDINARIA'),
+  turma_ord <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma ordinaria'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma ordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ORDINARIA'),
                          str_detect(pdf,'primeira turma ordinaria') ~ '1a TURMA ORDINARIA',
                          str_detect(pdf,'segunda turma ordinaria') ~ '2a TURMA ORDINARIA',
                          str_detect(pdf,'terceira turma ordinaria') ~ '3a TURMA ORDINARIA',
                          T~'NAO IDENTIFICADO')
   
-  turma_espec <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma especial'))~ stringr::str_extract(pdf, '[0-9]ª turma especial') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ESPECIAL'),
+  turma_espec <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma especial'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma especial') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA ESPECIAL'),
                            str_detect(pdf,'primeira turma especial') ~ '1a TURMA ESPECIAL',
                            str_detect(pdf,'segunda turma especial') ~ '2a TURMA ESPECIAL',
                            str_detect(pdf,'terceira turma especial') ~ '3a TURMA ESPECIAL',
                            T~'NAO IDENTIFICADO')
   
-  turma_extra <- case_when(!is.na(str_extract(pdf, '[0-9]ª turma extraordinaria'))~ stringr::str_extract(pdf, '[0-9]ª turma extraordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA EXTRAORDINARIA'),
+  turma_extra <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa turma extraordinaria'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma extraordinaria') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA EXTRAORDINARIA'),
                            str_detect(pdf,'primeira turma extraordinaria') ~ '1a TURMA EXTRAORDINARIA',
                            str_detect(pdf,'segunda turma extraordinaria') ~ '2a TURMA EXTRAORDINARIA',
                            str_detect(pdf,'terceira turma extraordinaria') ~ '3a TURMA EXTRAORDINARIA',
@@ -190,9 +190,9 @@ consolidate_appeals <- function(data) {
     dplyr::mutate(
       type_appeal = type_appeal %>%
         detect_appeal(summary, "recurso volunt", "RECURSO VOLUNTARIO") %>%
-        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\u00cdCIO") %>%
+        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\\u00cdCIO") %>%
         detect_appeal(summary, "recurso volunt", "RECURSO VOLUNTARIO") %>%
-        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\u00cdCIO")) %>%
+        detect_appeal(summary, "recurso de oficio", "RECURSO DE OF\\\u00cdCIO")) %>%
     dplyr::mutate(
       date_publication = lubridate::dmy(date_publication),
       date_session = lubridate::dmy(date_session)) %>%
@@ -416,8 +416,8 @@ consolidate_rapporteurs <- function(data) {
     dplyr::mutate(rapporteur = clean_rapporteur(rapporteur)) %>%
     dplyr::left_join(rapporteur_final, "rapporteur") %>%
     dplyr::mutate(
-      title = ifelse(is.na(title), "N\\u00c3O IDENTIFICADO", title),
-      type = ifelse(is.na(type), "N\\u00c3O IDENTIFICADO", type),
+      title = ifelse(is.na(title), "N\\\u00c3O IDENTIFICADO", title),
+      type = ifelse(is.na(type), "N\\\u00c3O IDENTIFICADO", type),
       chamber = ifelse(is.na(chamber), "VAZIO", chamber),
       section = ifelse(is.na(section), "VAZIO", section),
       section = ifelse(
@@ -434,20 +434,20 @@ consolidate_rapporteurs <- function(data) {
 consolidate_chambers <- function(data) {
   
   # Shortcut for empty keywords
-  empty <- c("VAZIO", "N\\u00c3O IDENTIFICADO")
+  empty <- c("VAZIO", "N\\\u00c3O IDENTIFICADO")
   
   # Create final table
   data %>%
     dplyr::mutate(
       chamber = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", chamber),
       section = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", section),
-      section = ifelse(type_party == "F\\u00edsica" & section %in% empty, "SEGUNDA SECAO", section),
+      section = ifelse(type_party == "F\\\u00edsica" & section %in% empty, "SEGUNDA SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "IRPJ|CSL|SIMPLES") &
           section %in% empty, "PRIMEIRA SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "FINSOCIAL|PIS|COFINS|CPMF|II|IPI") &
           section %in% empty, "TERCEIRA SECAO", section),
-      section = ifelse(section %in% empty, "N\\u00c3O IDENTIFICADO", section),
-      chamber = ifelse(chamber %in% empty, "N\\u00c3O IDENTIFICADO", chamber))
+      section = ifelse(section %in% empty, "N\\\u00c3O IDENTIFICADO", section),
+      chamber = ifelse(chamber %in% empty, "N\\\u00c3O IDENTIFICADO", chamber))
 }
