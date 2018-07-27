@@ -63,6 +63,9 @@ classificador_turma_ <- function(id, path){
                           csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'terceira turma') ~ '3a TURMA',
                           T~'NAO IDENTIFICADO')
   
+  secao <- ifelse(csrf != 'NAO IDENTIFICADO', csrf, secao)
+  
+  camara <- ifelse(csrf != 'NAO IDENTIFICADO', csrf, camara)
   
   turma <- case_when(csrf != 'NAO IDENTIFICADO' ~ turma_csrf,
                      turma_ord != 'NAO IDENTIFICADO' ~ turma_ord,
