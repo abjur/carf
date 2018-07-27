@@ -23,6 +23,9 @@ classificador_turma_ <- function(id, path){
     stringr::str_to_lower() %>%
     rm_accent
   
+  csrf <- case_when(str_detect(pdf, 'csrf')~'CSRF',
+                    T~'NAO IDENTIFICADO')
+  
   secao <- case_when(!is.na(str_extract(pdf, '[0-9]\u00aa secao'))~ stringr::str_extract(pdf, '[0-9]\u00aa secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
                      str_detect(pdf,'primeira secao') ~ '1a SECAO',
                      str_detect(pdf,'segunda secao') ~ '2a SECAO',
@@ -54,8 +57,15 @@ classificador_turma_ <- function(id, path){
                            str_detect(pdf,'terceira turma extraordinaria') ~ '3a TURMA EXTRAORDINARIA',
                            T~'NAO IDENTIFICADO')
   
+  turma_csrf <- case_when(csrf != 'NAO IDENTIFICADO' & !is.na(str_extract(pdf, '[0-9]\u00aa turma'))~ stringr::str_extract(pdf, '[0-9]\u00aa turma') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a TURMA'),
+                          csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'primeira turma') ~ '1a TURMA',
+                          csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'segunda turma') ~ '2a TURMA',
+                          csrf != 'NAO IDENTIFICADO' & str_detect(pdf,'terceira turma') ~ '3a TURMA',
+                          T~'NAO IDENTIFICADO')
   
-  turma <- case_when(turma_ord != 'NAO IDENTIFICADO' ~ turma_ord,
+  
+  turma <- case_when(csrf != 'NAO IDENTIFICADO' ~ turma_csrf,
+                     turma_ord != 'NAO IDENTIFICADO' ~ turma_ord,
                      turma_espec != 'NAO IDENTIFICADO' ~ turma_espec,
                      turma_extra != 'NAO IDENTIFICADO' ~ turma_extra,
                      T~'NAO IDENTIFICADO')
