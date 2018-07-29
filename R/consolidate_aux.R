@@ -26,7 +26,7 @@ classificador_turma_ <- function(id, path){
   csrf <- case_when(str_detect(pdf, 'csrf')~'CSRF',
                     T~'NAO IDENTIFICADO')
   
-  secao <- case_when(!is.na(str_extract(pdf, '[0-3](\u00aa)? ?secao'))~ stringr::str_extract(pdf, '[0-3](\u00aa)? ?secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
+  secao <- case_when(!is.na(str_extract(pdf, '[1-3](\u00aa)? ?secao'))~ stringr::str_extract(pdf, '[1-3](\u00aa)? ?secao') %>% stringr::str_sub(end = 1) %>% stringr::str_c('a SECAO'),
                      str_detect(pdf,'primeira secao') ~ '1a SECAO',
                      str_detect(pdf,'segunda secao') ~ '2a SECAO',
                      str_detect(pdf,'terceira secao') ~ '3a SECAO',
