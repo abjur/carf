@@ -71,11 +71,11 @@ classificador_turma_ <- function(id, path){
   
   secao <- ifelse(csrf != 'NAO IDENTIFICADO', csrf, secao)
   
-  # camara <- ifelse(csrf != 'NAO IDENTIFICADO', csrf, camara)
+  camara <- ifelse(csrf != 'NAO IDENTIFICADO', csrf, camara)
   
-  camara <- case_when(csrf != 'NAO IDENTIFICADO'~ csrf,
-                      turma_espec != 'NAO IDENTIFICADO' ~ 'NAO IDENTIFICADO',
-                      T~camara)
+  # camara <- case_when(csrf != 'NAO IDENTIFICADO'~ csrf,
+  #                     turma_espec != 'NAO IDENTIFICADO' ~ 'NAO IDENTIFICADO',
+  #                     T~camara)
   
   
   turma <- case_when(csrf != 'NAO IDENTIFICADO' ~ turma_csrf,
