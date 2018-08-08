@@ -448,9 +448,9 @@ consolidate_rapporteurs <- function(data) {
       chamber = ifelse(is.na(chamber), "VAZIO", chamber),
       section = ifelse(is.na(section), "VAZIO", section),
       section = ifelse(
-        stringr::str_detect(section, "1"), "PRIMEIRA SECAO",
-        ifelse(stringr::str_detect(section, "2"), "SEGUNDA SECAO",
-               ifelse(stringr::str_detect(section, "3"), "TERCEIRA SECAO",
+        stringr::str_detect(section, "1"), "1a SECAO",
+        ifelse(stringr::str_detect(section, "2"), "2a SECAO",
+               ifelse(stringr::str_detect(section, "3"), "3a SECAO",
                       section))))
 }
 
@@ -468,13 +468,13 @@ consolidate_chambers <- function(data) {
     dplyr::mutate(
       chamber = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", chamber),
       section = ifelse(stringr::str_detect(type_appeal, "ESPECIAL"), "CSRF", section),
-      section = ifelse(type_party == "F\\\u00edsica" & section %in% empty, "SEGUNDA SECAO", section),
+      section = ifelse(type_party == "F\\\u00edsica" & section %in% empty, "2a SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "IRPJ|CSL|SIMPLES") &
-          section %in% empty, "PRIMEIRA SECAO", section),
+          section %in% empty, "1a SECAO", section),
       section = ifelse(
         stringr::str_detect(taxes, "FINSOCIAL|PIS|COFINS|CPMF|II|IPI") &
-          section %in% empty, "TERCEIRA SECAO", section),
+          section %in% empty, "3a SECAO", section),
       section = ifelse(section %in% empty, "N\\\u00c3O IDENTIFICADO", section),
       chamber = ifelse(chamber %in% empty, "N\\\u00c3O IDENTIFICADO", chamber))
 }
