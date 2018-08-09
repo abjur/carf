@@ -23,7 +23,9 @@ get_comprot <- function(id) {
   id <- stringr::str_replace_all(id, "[^0-9]", "")
   
   # Iterate over IDs
-  purrr::map(id, get_comprot_)
+  purrr::map(id, get_comprot_) %>%
+    purrr::discard(function(x){tibble::is.tibble}) %>%
+    purrr::reduce(bind_rows)
 }
 
 #' Get the comprot data for one lawsuit
